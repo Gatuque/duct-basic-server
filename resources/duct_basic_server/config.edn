@@ -1,10 +1,71 @@
 {:duct.profile/base
  {:duct.core/project-ns duct-basic-server
 
-  :duct.router/cascading
-  [#ig/ref [:duct-basic-server.handler/example]]
+  [:duct.migrator.ragtime/resources :duct-sever-common/migrations]
+  {:path "migrations"}
+  [:duct.migrator.ragtime/resources :duct-server-migrations/runtime]
+  {:path #duct/env ["RUNTIME_MIGRATIONS" :or "dev_migrations"]}
+  :duct.migrator/ragtime
+  {:migrations       [#ig/ref :duct-sever-common/migrations
+                      #ig/ref :duct-server-migrations/runtime]
+   :logger            #ig/ref :duct/logger
+   :database          #ig/ref :duct.database/sql
+   :migrations-table  "duct_server_migrations"
+   :strategy         :apply-new}
 
-  :duct-basic-server.handler/example {}}
+  :duct.logger/timbre {:level :debug
+                       :appenders {:duct.logger.timbre/spit #ig/ref :duct.logger.timbre/spit
+                                   :duct.logger.timbre/brief #ig/ref :duct.logger.timbre/brief}}
+  :duct.logger.timbre/spit {:fname #duct/env ["LOGS_FILE_PATH" :or "logs/dev.log"]}
+  :duct.logger.timbre/brief {:min-level :report}
+
+  :duct-basic-server.router/reitit
+  {:env #ig/ref :duct.core/environment
+   :routes [["/api"
+             {:swagger {:tags ["comments"]}}
+
+             ["/users"
+              {:get {:summary "Get all users"
+                     :handler #ig/ref :duct-basic-server.handler.handler/ok}}
+
+               :post {:summary "Create a new user"
+                      :parameters {:body [:map
+                                          [:first_name :string]
+                                          [:last_name :string]
+                                          [:email
+                                           [:re #ig/ref :duct-basic-server.config/email-model]]
+                                          [:admin {:default false} :boolean]
+                                          [:pass :string]]}
+                      :responses {200 {:body [:map
+                                              [:status :int]
+                                              [:message :string]]}}
+                      :handler #ig/ref :duct-basic-server.handler.handler/create-user}]
+
+             ["/users/:id"
+              {:get {:summary "Get user by ID"
+                     :parameters {:path [:map
+                                         [:id :int]]}
+                     :handler #ig/ref :duct-basic-server.handler.handler/ok}
+
+               :put {:summary "Update a user by the ID"
+                     :parameters {:path [:map
+                                         [:id :int]]}
+                     :responses {200 {:body [:map [:status :int]]}}
+                     :handler #ig/ref :duct-basic-server.handler.handler/ok}
+
+               :delete {:summary "Delete a user by the ID"
+                        :parameters {:path #ig/ref :type/slug}
+                        :handler #ig/ref :duct-basic-server.handler.handler/ok}}]]]}
+
+  :duct.server.http/jetty
+  {:handler #ig/ref :duct-basic-server.router/reitit
+   :host    #duct/env "SERVER_HOST"
+   :port    #duct/env [ "SERVER_PORT" Int :or 3000]
+   :ssl?    #duct/env [ "SERVER_SSL" Bool :or false]
+   :logger  #ig/ref :duct/logger}
+
+
+  }
 
  :duct.profile/dev   #duct/include "dev"
  :duct.profile/local #duct/include "local"
