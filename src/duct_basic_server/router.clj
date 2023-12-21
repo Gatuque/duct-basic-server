@@ -1,6 +1,6 @@
 (ns duct-basic-server.router
   (:require [reitit.ring :as ring]
-            [reitit.coercion.malli]
+            [reitit.coercion.malli :as malli]
             [reitit.ring.malli]
             [reitit.dev.pretty :as pretty]
             [reitit.swagger :as swagger]
@@ -9,15 +9,13 @@
             [reitit.ring.middleware.muuntaja :as muuntaja]
             [reitit.ring.middleware.exception :as exception]
             [reitit.ring.middleware.parameters :as parameters]
-            [duct-basic-server.middleware.web-defaults :as middleware]
-            [duct-basic-server.middleware.db-middleware :as db-middleware]
+            [ring.middleware.reload :refer [wrap-reload]]
+            [ring.middleware.defaults :refer [site-defaults wrap-defaults]]
     ;       [reitit.ring.middleware.dev :as dev]
     ;       [reitit.ring.spec :as spec]
     ;       [spec-tools.spell :as spell]
             [muuntaja.core :as m]
-            [duct-basic-server.handler.handler :as handler]
             [malli.util :as mu]
-            [taoensso.timbre :as log]
             [integrant.core :as ig]
             [clojure.walk :as walk]))
 
@@ -35,14 +33,13 @@
               ;; coercing response bodys
               coercion/coerce-response-middleware
               ;; coercing request parameters
-              coercion/coerce-request-middleware
-              ]]
+              coercion/coerce-request-middleware]]
     (if (= env :production)
       (conj base exception/exception-middleware)
       base)))
 
 (defn default-route-opts [env]
-  {:coercion (reitit.coercion.malli/create
+  {:coercion (malli/create
                {;; set of keys to include in error messages
                 :error-keys #{#_:type :coercion :in :schema :value :errors :humanized #_:transformed}
                 ;; schema identity function (default: close all map schemas)
@@ -72,8 +69,8 @@
   ["/swagger.json"
    {:get {:no-doc true
           :swagger {:info {:title "duct_server_api"
-                           :description "A simple crud server API using clojure duct framework"}
-          :handler (swagger/create-swagger-handler)}}}])
+                           :description "A simple crud server API using clojure duct framework"}}
+          :handler (swagger/create-swagger-handler)}}])
 
 (defmethod ig/prep-key ::reitit [_ {:keys [routes env]
                                     ::ring/keys [opts default-handlers]}]
@@ -83,9 +80,14 @@
 
 (defmethod ig/init-key ::reitit [_ {:keys [routes env]
                                     ::ring/keys [opts default-handlers]}]
-  (ring/ring-handler
-    (ring/router (conj routes swagger-json-routes) opts)
-    (ring/routes
-      (swagger-ui/create-swagger-ui-handler
-        {:path "/"})
-      (ring/create-default-handler default-handlers))))
+  (let [app (-> (ring/router (conj routes swagger-json-routes) opts)
+                (ring/ring-handler
+                  (ring/routes
+                    (swagger-ui/create-swagger-ui-handler
+                      {:path "/"})
+                    (ring/create-default-handler default-handlers))))]
+    (if (= env :production)
+      app
+      (-> app
+          wrap-reload
+          (wrap-defaults site-defaults)))))

@@ -1,1 +1,9 @@
-{}
+{:duct.logger.timbre/println {}
+ :duct.logger/timbre
+ {:level    :info
+  :appender #ig/ref :duct.logger.timbre/println}
+
+ :duct.core/environment :development
+ :duct.database.sql/hikaricp
+ {:jdbc-url #duct/env ["DEV_JDBC_URL" :or "jdbc:postgresql://localhost:5499/dev_test?user=gatu&password=gatu"]}
+ }

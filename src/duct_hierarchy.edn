@@ -1,1 +1,1 @@
-{}
+{:duct-basic-server.boundary.db/bind-db-connection      [:duct/daemon]}

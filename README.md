@@ -15,6 +15,22 @@ lein duct setup
 This will create files for local configuration, and prep your system
 for the project.
 
+### Setup the DB
+
+Run a Postgres DB via Docker:
+
+```
+docker run \
+--rm -it \
+-p 4444:5432 \
+--volume postgres-data:/var/lib/postgresql/data \
+--name postgres \
+-e POSTGRES_USER=dbuser \
+-e POSTGRES_DB=testDB \
+-e POSTGRES_PASSWORD=dbpassword \
+postgres:16.1
+```
+
 ### Environment
 
 To begin developing, start with a REPL.
@@ -27,7 +43,7 @@ Then load the development environment.
 
 ```clojure
 user=> (dev)
-:loaded
+:loaded\q
 ```
 
 Run `go` to prep and initiate the system.
@@ -64,7 +80,24 @@ But you can also run tests through Leiningen.
 ```sh
 lein test
 ```
+### Check if the DB tables were created successfully
+Open a new terminal and run
+```sh
+docker exec -it postgres psql -U dbuser -d testDB
+```
+```sql
+testDB=# \dt
+            List of relations
+ Schema |     Name      | Type  |  Owner
+--------+---------------+-------+----------
+public | duct_server_migrations| table | dbuser
+public | users                 | table | dbuser
+(2 rows)
 
+testDB=# \q
+```
 ## Legal
+
+
 
 Copyright © 2023 FIXME
