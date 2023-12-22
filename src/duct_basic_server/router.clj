@@ -11,9 +11,6 @@
             [reitit.ring.middleware.parameters :as parameters]
             [ring.middleware.reload :refer [wrap-reload]]
             [ring.middleware.defaults :refer [site-defaults wrap-defaults]]
-    ;       [reitit.ring.middleware.dev :as dev]
-    ;       [reitit.ring.spec :as spec]
-    ;       [spec-tools.spell :as spell]
             [muuntaja.core :as m]
             [malli.util :as mu]
             [integrant.core :as ig]
@@ -72,13 +69,13 @@
                            :description "A simple crud server API using clojure duct framework"}}
           :handler (swagger/create-swagger-handler)}}])
 
-(defmethod ig/prep-key ::reitit [_ {:keys [routes env]
+(defmethod ig/prep-key ::reitit-router [_ {:keys [routes env]
                                     ::ring/keys [opts default-handlers]}]
   {:routes (walk/postwalk resolve-symbol routes)
    ::ring/opts  (merge {:data (default-route-opts env)} opts)
    ::ring/default-handlers (merge default-default-handlers default-handlers)})
 
-(defmethod ig/init-key ::reitit [_ {:keys [routes env]
+(defmethod ig/init-key ::reitit-router [_ {:keys [routes env]
                                     ::ring/keys [opts default-handlers]}]
   (let [app (-> (ring/router (conj routes swagger-json-routes) opts)
                 (ring/ring-handler
@@ -90,4 +87,5 @@
       app
       (-> app
           wrap-reload
-          (wrap-defaults site-defaults)))))
+          (wrap-defaults
+            (assoc-in site-defaults [:security :anti-forgery] false))))))

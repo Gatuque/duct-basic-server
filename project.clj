@@ -15,7 +15,8 @@
                  [duct/database.sql.hikaricp "0.4.0"]
                  [org.postgresql/postgresql "42.6.0"]
                  [org.clojure/tools.cli "1.0.206"]
-                 [conman "0.9.6"]]
+                 [conman "0.9.6"]
+                 [buddy/buddy-hashers "1.4.0"]]
   :plugins [[duct/lein-duct "0.12.3"]]
   :main ^:skip-aot duct-basic-server.main
   :resource-paths ["resources" "target/resources"]

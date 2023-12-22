@@ -1,6 +1,8 @@
 {:duct.profile/base
  {:duct.core/project-ns duct-basic-server
 
+  :duct.core/environment :production
+
   :duct.database.sql/hikaricp
   {:jdbc-url #duct/env ["DATABASE_URL"]}
 
@@ -28,24 +30,23 @@
   :duct.logger.timbre/brief
   {:min-level :report}
 
-  :duct-basic-server.router/reitit
+  :duct-basic-server.router/reitit-router
   {:env #ig/ref :duct.core/environment
    :routes [["/api"
              {:swagger {:tags ["Duct Basic Server API"]}}
 
              ["/users"
               {:get {:summary "Get all users"
-                     :handler (fn [req]
-                                {:status 200
-                                 :body "ok"})}
+                     :handler #ig/ref :duct-basic-server.handler.core/get-users}
 
                :post {:summary "Create a new user"
                       :parameters {:body [:map
                                           [:first_name :string]
-                                          [:last_name :string]
+                                          [:last_name {:default ""} :string]
                                           [:email
                                            [:re #ig/ref :duct-basic-server.model/email-model]]
                                           [:admin {:default false} :boolean]
+                                          [:is_active {:default false} :boolean]
                                           [:pass :string]]}
                       :handler #ig/ref :duct-basic-server.handler.core/create-user}}]
 
@@ -53,35 +54,34 @@
               {:get {:summary "Get user by ID"
                      :parameters {:path [:map
                                          [:id :int]]}
-                     :handler (fn [req]
-                                {:status 200
-                                 :body "ok"})}
+                     :handler #ig/ref :duct-basic-server.handler.core/get-user}
 
                :put {:summary "Update a user by the ID"
-                     :parameters {:path [:map
-                                         [:id :int]]}
-                     :handler (fn [req]
-                                {:status 200
-                                 :body "ok"})}
+                     :parameters {:body [:map
+                                         [:first_name :string]
+                                         [:last_name {:default ""} :string]]
+                                  :path [:map
+                                          [:id :int]]}
+                     :handler #ig/ref :duct-basic-server.handler.core/update-user}
 
                :delete {:summary "Delete a user by the ID"
                         :parameters {:path [:map
                                             [:id :int]]}
-                        :handler (fn [req]
-                                   {:status 200
-                                    :body "ok"})}}]]]}
+                        :handler #ig/ref :duct-basic-server.handler.core/delete-user}}]]]}
 
   :duct.server.http/jetty
-  {:handler #ig/ref :duct-basic-server.router/reitit
+  {:handler #ig/ref :duct-basic-server.router/reitit-router
    :host    #duct/env "SERVER_HOST"
    :port    #duct/env [ "SERVER_PORT" Int :or 3000]
    :ssl?    #duct/env [ "SERVER_SSL" Bool :or false]
    :logger  #ig/ref :duct/logger}
 
-  :duct-basic-server.handler.core/create-user
-  {}
-  :duct-basic-server.model/email-model
-  {}
+  :duct-basic-server.handler.core/create-user {}
+  :duct-basic-server.handler.core/get-users {}
+  :duct-basic-server.handler.core/get-user {}
+  :duct-basic-server.handler.core/update-user {}
+  :duct-basic-server.handler.core/delete-user {}
+  :duct-basic-server.model/email-model {}
 
   }
 
