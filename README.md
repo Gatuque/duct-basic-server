@@ -1,6 +1,12 @@
 # duct-basic-server
 
-FIXME: description
+This repository is a simple CRUD API of frequently used functions in duct.
+
+- PostgreSQL (docker)
+- migration ([duct/migrator.ragtime](https://github.com/duct-framework/migrator.ragtime))
+- routes ([reitit](https://github.com/metosin/reitit))
+- SQL ([conman](https://github.com/luminus-framework/conman))
+- test ([test-containers](https://github.com/testcontainers/testcontainers-clj))
 
 ## Developing
 

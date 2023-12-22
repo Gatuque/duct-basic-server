@@ -29,9 +29,8 @@
    :uberjar {:aot :all}
    :profiles/dev {}
    :project/dev  {:source-paths   ["dev/src"]
-                  :resource-paths ["dev/resources"]
-                  :dependencies   [[integrant/repl "0.3.2"]
-                                   [hawk "0.2.11"]
-                                   [eftest "0.5.9"]
-                                   [kerodon "0.9.1"]]}}
+                  :resource-paths ["dev/resources"]}
+   :test  {:source-paths   ["src" "dev/src" "test"]
+           :resource-paths ["resources" "target/resources" "dev/resources"]
+           :main ^:skip-aot test}}
   :aliases {"migrate" ["run" ":duct/migrator"]})
